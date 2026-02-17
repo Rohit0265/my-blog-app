@@ -5,8 +5,8 @@ import Image from 'next/image'
 import Card from '../card/Card'
 
 
-const getData = async()=>{
-  const res = await fetch("http://localhost:3000/api/posts",{
+const getData = async(page,cat)=>{
+  const res = await fetch(`http://localhost:3000/api/post?page=${page}&cat=${cat || "" }`,{
     cache:"no-store",
   })
 
@@ -19,11 +19,16 @@ const getData = async()=>{
 
 
 
-const CardList = async () => {
+const CardList = async ({page,cat}) => {
 
-const data = await getData()
+const {posts,count} = await getData(page,cat)
+
+const POST_PER_PAGE = 2;
 
 
+const hasPrev = POST_PER_PAGE * (page-1) > 0;
+const hasNext =  POST_PER_PAGE * (page-1) + POST_PER_PAGE < count;
+ 
 
   return (
         <div className={styles.container}>
@@ -37,12 +42,13 @@ const data = await getData()
 
               </div>
             </div> */}
-            <Card/>
-            <Card/>
-            <Card/>
-            <Card/>
+            {posts?.map((item)=>(
+              
+              <Card item={item} key={item._id}/>
+            ))
+          }
           </div>
-        <Pagination/>
+        <Pagination hasNext={hasNext} hasPrev={hasPrev}  page={page}/>
         </div>
   )
 }

@@ -1,12 +1,31 @@
+"use client"
 import React from 'react'
 import styles from "./comments.module.css"
 import Link from 'next/link'
 import Image from 'next/image'
+import useSWR from 'swr'
+import { useSession } from 'next-auth/react'
 
 
-const Comments = () => {
+const fetcher = async (url) =>{
+  const res = await fetch(url);
+  const data = await res.json();
 
-const status = "authenticated"
+  if(!res.ok){
+    const error = new Error(data.message);
+    throw error;
+  }
+  return data;
+}
+
+const Comments = ({postSlug}) => {
+
+const {status} = useSession();
+
+
+const {data,isLoading} = useSWR(`http://localhost:3000/api/comments?postSlug=${postSlug}`,fetcher)
+
+console.log(data);
 
   return (
     <div className={styles.container}>
@@ -20,18 +39,21 @@ const status = "authenticated"
         <Link href="/login"> Login to write a Comment </Link> 
       ) }
       <div className={styles.comments}>
-        <div className={styles.comment}>
+        { isLoading ? "Loading" : data?.map(item=>(
+          <div className={styles.comment} key ={item._id}>
           <div className={styles.user}>
-            <Image className={styles.image} src="/p1.jpeg" alt='' height={50} width={50}/>
+            {item?.user?.image &&  <Image className={styles.image} src={item.user.image} alt='' height={50} width={50}/>}
             <div className={styles.userInfo}>
-              <span>John Doe</span>
-              <span>01.01.2023</span>
+              <span>{item.user.name}</span>
+              <span>{item.createdAt}</span>
             </div>
           </div>
           <p className={styles.desc}>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Ipsum, recusandae? Necessitatibus, aut odit? Tempore, temporibus.
+            {item.desc}
           </p>
         </div>
+          ))
+        }
       </div>
     </div>
   )
