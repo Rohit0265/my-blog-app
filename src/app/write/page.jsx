@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 
 
+
+//  its just a demo
 const uploadImage = async (file) => {
   const formData = new FormData();
   formData.append("file", file);
