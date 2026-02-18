@@ -9,8 +9,32 @@ import "react-quill/dist/quill.bubble.css"
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 
+
+const uploadImage = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "YOUR_UPLOAD_PRESET");
+
+  const res = await fetch(
+    "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload",
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  const data = await res.json();
+  console.log(data.secure_url);
+};
+
+
+
+
+
+
 const page = () => {
 
+const [file,setFile] = useState(null);
 const [open,setopen]= useState(false);
 const [value,setValue]= useState("");
 
@@ -24,7 +48,7 @@ const [value,setValue]= useState("");
     return <div>Loading</div>
   }
 
-    if(status === "authenticated"){
+    if(status === "unauthenticated"){
       router.push("/")
     }
 
@@ -39,9 +63,13 @@ const [value,setValue]= useState("");
             </button>
             {open && (
                 <div className={styles.add}>
-
+                  <input type='file' id='image' onChange={e=>setFile(e.target.files[0])}
+                  style={{display:"none"}}
+                  />
            <button className={styles.addButton}>
+              <label htmlFor='image'>
                 <Image src="/image.png" alt='' width={16} height={16} />
+                </label>
             </button>
 
            <button className={styles.addButton}>
