@@ -8,7 +8,7 @@ import Link from 'next/link'
 
 
 const getData = async (slug) => {
-  const res = await fetch(`http://localhost:3000/api/post/${slug}`, {
+  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/post/${slug}`, {
     cache: "no-store",
   });
 

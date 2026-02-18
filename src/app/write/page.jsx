@@ -1,95 +1,148 @@
-"use client"
+"use client";
 
+import React, { useState, useEffect } from "react";
+import styles from "./write.module.css";
+import Image from "next/image";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.bubble.css";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
-import React, { useActionState, useState } from 'react'
-import styles from "./write.module.css"
-import Image from 'next/image'
-import ReactQuill from 'react-quill'
-import "react-quill/dist/quill.bubble.css"
-import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
-
-
-
-//  its just a demo
-const uploadImage = async (file) => {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", "YOUR_UPLOAD_PRESET");
-
-  const res = await fetch(
-    "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload",
-    {
-      method: "POST",
-      body: formData,
-    }
-  );
-
-  const data = await res.json();
-  console.log(data.secure_url);
-};
-
-
-
-
-
-
-const page = () => {
-
-const [file,setFile] = useState(null);
-const [open,setopen]= useState(false);
-const [value,setValue]= useState("");
-
+const Page = () => {
+  const { status } = useSession();
   const router = useRouter();
 
-  const {status} = useSession();
-//   console.log(data,status);
+  const [open, setOpen] = useState(false);
+  const [file, setFile] = useState(null);
+  const [media, setMedia] = useState("");
+  const [value, setValue] = useState("");
+  const [title, setTitle] = useState("");
+  const [catSlug, setCatSlug] = useState("");
 
+  useEffect(() => {
+    const upload = async () => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append(
+        "upload_preset",
+        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+      );
 
-  if(status === "loading"){
-    return <div>Loading</div>
+      try {
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error("Cloudinary upload failed");
+        }
+
+        const data = await res.json();
+        setMedia(data.secure_url);
+      } catch (error) {
+        console.error("Error uploading image:", error);
+      }
+    };
+
+    file && upload();
+  }, [file]);
+
+  if (status === "loading") {
+    return <div className={styles.loading}>Loading...</div>;
   }
 
-    if(status === "unauthenticated"){
-      router.push("/")
-    }
+  if (status === "unauthenticated") {
+    router.push("/");
+    return null; // Prevent rendering while redirecting
+  }
 
+  const slugify = (str) =>
+    str
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/[\s_-]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+  const handleSubmit = async () => {
+    const res = await fetch("/api/post", {
+      method: "POST",
+      body: JSON.stringify({
+        title,
+        desc: value,
+        img: media,
+        slug: slugify(title),
+        catSlug: catSlug || "style", //If not selected, choose the general category
+      }),
+    });
+
+    if (res.status === 200) {
+      const data = await res.json();
+      router.push(`/posts/${data.slug}`);
+    }
+  };
 
   return (
     <div className={styles.container}>
-        <input className={styles.input} type="text" placeholder='Title' />
-        <div className={styles.editor}>
-
-            <button className={styles.button} onClick={()=>setopen(!open)}>
-                <Image src="/plus.png" alt='' width={16} height={16} />
+      <input
+        type="text"
+        placeholder="Title"
+        className={styles.input}
+        onChange={(e) => setTitle(e.target.value)}
+      />
+      <select
+        className={styles.select}
+        onChange={(e) => setCatSlug(e.target.value)}
+      >
+        <option value="style">style</option>
+        <option value="fashion">fashion</option>
+        <option value="food">food</option>
+        <option value="culture">culture</option>
+        <option value="travel">travel</option>
+        <option value="coding">coding</option>
+      </select>
+      <div className={styles.editor}>
+        <button className={styles.button} onClick={() => setOpen(!open)}>
+          <Image src="/plus.png" alt="" width={16} height={16} />
+        </button>
+        {open && (
+          <div className={styles.add}>
+            <input
+              type="file"
+              id="image"
+              onChange={(e) => setFile(e.target.files[0])}
+              style={{ display: "none" }}
+            />
+            <button className={styles.addButton}>
+              <label htmlFor="image">
+                <Image src="/image.png" alt="" width={16} height={16} />
+              </label>
             </button>
-            {open && (
-                <div className={styles.add}>
-                  <input type='file' id='image' onChange={e=>setFile(e.target.files[0])}
-                  style={{display:"none"}}
-                  />
-           <button className={styles.addButton}>
-              <label htmlFor='image'>
-                <Image src="/image.png" alt='' width={16} height={16} />
-                </label>
+            <button className={styles.addButton}>
+              <Image src="/external.png" alt="" width={16} height={16} />
             </button>
-
-           <button className={styles.addButton}>
-                <Image src="/external.png" alt='' width={16} height={16} />
+            <button className={styles.addButton}>
+              <Image src="/video.png" alt="" width={16} height={16} />
             </button>
-
-           <button className={styles.addButton}>
-                <Image src="/video.png" alt='' width={16} height={16} />
-            </button>
-            </div>
-            )}
-
-            <ReactQuill theme='bubble' value={value} onChange={setValue} placeholder='Tell Your Story...' />
-
-        </div>
-        <button className={styles.publish}>Publish</button>
+          </div>
+        )}
+        <ReactQuill
+          className={styles.textArea}
+          theme="bubble"
+          value={value}
+          onChange={setValue}
+          placeholder="Tell your story..."
+        />
+      </div>
+      <button className={styles.publish} onClick={handleSubmit}>
+        Publish
+      </button>
     </div>
-  )
-}
+  );
+};
 
-export default page
+export default Page;
