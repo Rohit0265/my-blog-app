@@ -3,13 +3,16 @@
 import React, { useState, useEffect } from "react";
 import styles from "./write.module.css";
 import Image from "next/image";
-import ReactQuill from "react-quill";
 import "react-quill/dist/quill.bubble.css";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import dynamic from "next/dynamic";
 
 const Page = () => {
   const { status } = useSession();
+
+  const ReactQuill = dynamic(()=> import("react-quill",{ssr:false}));
+
   const router = useRouter();
 
   const [open, setOpen] = useState(false);
