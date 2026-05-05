@@ -1,7 +1,6 @@
 📝 Blog App
 
 A full-stack blog application where users can create, read, update, and delete blog posts. This app provides authentication, user management, and a clean interface for writing and exploring blogs.
-
 ---
 
 🚀 Features
